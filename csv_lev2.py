@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 
 import re
+import sys
 
-csvpattern = re.compile(r"((\"[[\x00-\x7F]+?\"|[^,]+?),)+?(\"[[\x00-\x7F]+\"|[^,]+?)$")
+"""
+",,,",,,,,,,,,a
+,,,%
+
+"""
 columnpattern = re.compile(r"(\"[[\x00-\x7F]+?\"|[^,]+?),")
 lastcolumn = re.compile(r"(\"[[\x00-\x7F]+?\"|[^,]+?)$")
-
 quotepattern = re.compile(r"\"[[\x00-\x7F]+?\"")
-while True:
-    try:
-        line = input()
-    except Exception:
-        break
+lines = sys.stdin.readlines()
+for line in lines:
     elems = []
     while True:
         mch = columnpattern.match(line)
@@ -23,8 +24,16 @@ while True:
             lastmch = lastcolumn.match(line)
             elems.append(line[lastmch.span()[0]:lastmch.span()[1]])
             line = line[lastmch.span()[1]:]
-            continue
-        else:
             break
-    print("\t".join(elems))
+        else:
+            next_pos = line.find(",")
+            if next_pos != -1:
+                elems.append("")
+                line = line[next_pos+1:]
+                continue
+            else:
+                break
+
+    row = [x[1:-1] if quotepattern.match(x) else x for x in elems]
+    print("\t".join(row))
 
