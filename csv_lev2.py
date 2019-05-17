@@ -2,19 +2,29 @@
 
 import re
 
-csvpattern = re.compile(r"((\"[[\x00-\x7F]+?\"|[^,]+?),)+?(\"[[\x00-\x7F]+\"|[^,]+)$")
+csvpattern = re.compile(r"((\"[[\x00-\x7F]+?\"|[^,]+?),)+?(\"[[\x00-\x7F]+\"|[^,]+?)$")
+columnpattern = re.compile(r"(\"[[\x00-\x7F]+?\"|[^,]+?),")
+lastcolumn = re.compile(r"(\"[[\x00-\x7F]+?\"|[^,]+?)$")
+
 quotepattern = re.compile(r"\"[[\x00-\x7F]+?\"")
 while True:
     try:
         line = input()
     except Exception:
         break
-    matches = csvpattern.match(line)
-    row = matches.group(2, 3)
-    row = [x[1:-1] if quotepattern.match(x) else x for x in row]
-    print("\t".join(row))
-#
-#    id_ = csvpattern.match(line, 3)
-#    name = name[1:-1] if quotepattern.match(name) else name
-#    id_ = id_[1:-1] if quotepattern.match(id_) else id_
-#    print("\t".join([name, id_]))
+    elems = []
+    while True:
+        mch = columnpattern.match(line)
+        if mch is not None:
+            elems.append(line[mch.span()[0]:mch.span()[1]-1])
+            line = line[mch.span()[1]:]
+            continue
+        elif lastcolumn.match(line) is not None:
+            lastmch = lastcolumn.match(line)
+            elems.append(line[lastmch.span()[0]:lastmch.span()[1]])
+            line = line[lastmch.span()[1]:]
+            continue
+        else:
+            break
+    print("\t".join(elems))
+
